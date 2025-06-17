@@ -15,7 +15,7 @@ class pjInstaller extends pjInstallerAppController
 	public function beforeFilter()
 	{
 		$this->appendJs('jquery.min.js', PJ_THIRD_PARTY_PATH . 'jquery/');
-		$this->appendCss('admin.css');
+		$this->appendCss('admin.css?ver=1');
 		$this->appendCss('install.css', $this->getConst('PLUGIN_CSS_PATH'));
 		$this->appendCss('pj-button.css', PJ_FRAMEWORK_LIBS_PATH . 'pj/css/');
 		$this->appendCss('pj-form.css', PJ_FRAMEWORK_LIBS_PATH . 'pj/css/');

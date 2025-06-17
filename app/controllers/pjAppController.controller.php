@@ -117,7 +117,7 @@ class pjAppController extends pjController
 		$this->appendCss('css/smoothness/jquery-ui.min.css', PJ_THIRD_PARTY_PATH . 'jquery_ui/');
 				
 		$this->appendCss('pj-all.css', PJ_FRAMEWORK_LIBS_PATH . 'pj/css/');
-		$this->appendCss('admin.css');
+		$this->appendCss('admin.css?ver=1');
 		
     	if ($_GET['controller'] != 'pjInstaller')
 		{
