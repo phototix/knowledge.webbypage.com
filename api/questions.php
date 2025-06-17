@@ -1,7 +1,6 @@
 <?php
-define("PJ_HOST_PATH", dirname(__DIR__) . '/'); // Adjust if needed
-require PJ_HOST_PATH . 'config/config.inc.php'; // Bootstrap app
-require PJ_HOST_PATH . 'pjAppController.controller.php'; // Base controller
+require '../app/config/config.inc.php'; // Bootstrap app
+require '../app/controllers/pjAppController.controller.php'; // Base controller
 
 use pjQuestionModel;
 use pjMultiLangModel;
