@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 	<head>
-		<title>Knowledge Base Builder script by PHPJabbers.com</title>
+		<title>Knowledge Base - WebbyPage</title>
 		<meta http-equiv="Content-type" content="text/html; charset=utf-8" />
 		<?php
 		foreach ($controller->getCss() as $css)
@@ -20,7 +20,7 @@
 	<body>
 		<div id="container">
     		<div id="header">
-				<a href="http://www.phpjabbers.com/knowledge-base-builder/" id="logo" target="_blank"><img src="<?php echo PJ_INSTALL_URL . PJ_IMG_PATH; ?>backend/logo.png" alt="" /></a>
+				<a href="/" id="logo" target="_blank"><img src="<?php echo PJ_INSTALL_URL . PJ_IMG_PATH; ?>backend/logo.png" alt="" /></a>
 			</div>
 			
 			<div id="middle">
@@ -40,7 +40,7 @@
 		</div> <!-- container -->
 		<div id="footer-wrap">
 			<div id="footer">
-			   	<p><a href="http://www.phpjabbers.com/" target="_blank">PHP Scripts</a> Copyright &copy; <?php echo date("Y"); ?> <a href="http://www.PHPJabbers.com" target="_blank">PHPJabbers</a></p>
+			   	<p><a href="http://www.webbypage.com/" target="_blank">Apps Team Projects</a> Copyright &copy; <?php echo date("Y"); ?> <a href="http://www.webbypage.com" target="_blank">WebbyPage</a></p>
 	        </div>
         </div>
 	</body>
