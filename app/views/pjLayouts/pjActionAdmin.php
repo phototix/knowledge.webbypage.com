@@ -20,7 +20,7 @@
 	<body>
 		<div id="container">
     		<div id="header">
-				<a href="/" id="logo" target="_blank"><img src="<?php echo PJ_INSTALL_URL . PJ_IMG_PATH; ?>backend/logo.png" alt="" /></a>
+				<a href="/" id="logo" target="_blank"><img src="https://cloud.webbypage.com/index.php/s/wdRNyf7oqYGaa4q/download" alt="" /></a>
 			</div>
 			
 			<div id="middle">
