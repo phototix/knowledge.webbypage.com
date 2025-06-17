@@ -1,0 +1,30 @@
+RewriteEngine On
+
+RewriteRule home/ preview.php?controller=pjLoad&action=pjActionIndex [L,NC]
+RewriteRule search/sortby/(\S+)/keyword/(\S+)/category/(\d+)/ preview.php?controller=pjLoad&action=pjActionIndex&kb_search=1&sortby=$1&keyword=$2&category_id=$3 [L,NC]
+RewriteRule search/sortby/(\S+)/keyword/(\S+)/ preview.php?controller=pjLoad&action=pjActionIndex&kb_search=1&sortby=$1&keyword=$2&category_id= [L,NC]
+RewriteRule search/sortby/(\S+)/category/(\d+)/ preview.php?controller=pjLoad&action=pjActionIndex&kb_search=1&sortby=$1&keyword=&category_id=$2 [L,NC]
+RewriteRule search/sortby/(\S+)/ preview.php?controller=pjLoad&action=pjActionIndex&kb_search=1&sortby=$1&keyword=&category_id= [L,NC]
+RewriteRule search/category/(\d+)/ preview.php?controller=pjLoad&action=pjActionIndex&kb_search=1&sortby=&keyword=&category_id=$1 [L,NC]
+RewriteRule search/keyword/(\S+)/category/(\d+)/ preview.php?controller=pjLoad&action=pjActionIndex&kb_search=1&sortby=&keyword=$1&category_id=$2 [L,NC]
+RewriteRule search/keyword/(\S+)/ preview.php?controller=pjLoad&action=pjActionIndex&kb_search=1&sortby=&keyword=$1&category_id= [L,NC]
+RewriteRule search/ preview.php?controller=pjLoad&action=pjActionIndex&kb_search=1&sortby=&keyword=&category_id= [L,NC]
+RewriteRule category/(\d+)/(\S+)/(\S+).html$ preview.php?controller=pjLoad&action=pjActionView&id=$1 [L,NC]
+RewriteRule category/(\d+)/(\S+).html$ preview.php?controller=pjLoad&action=pjActionIndex&category_id=$1 [L,NC]
+RewriteRule category/ preview.php?controller=pjLoad&action=pjActionCategory [L,NC]
+RewriteRule glossary/(\S+)/ preview.php?controller=pjLoad&action=pjActionGlossary&letter=$1 [L,NC]
+RewriteRule glossary/ preview.php?controller=pjLoad&action=pjActionGlossary [L,NC]
+
+# disable TRACK and TRACE http methods. 'RewriteEngine On' is required!
+RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK)
+RewriteRule .* - [F]
+
+Options -Indexes
+ServerSignature Off
+<ifModule mod_headers.c>
+	Header unset X-Powered-By
+</ifModule>
+
+<IfModule php5_module>
+	php_value session.cookie_httponly true
+</IfModule>
