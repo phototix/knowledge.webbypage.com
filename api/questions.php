@@ -1,87 +1,115 @@
 <?php
-require '../app/config/config.inc.php'; // Bootstrap app
-require '../app/controllers/pjAppController.controller.php'; // Base controller
+// Load database config
+require_once 'config/database.php';
 
-use pjQuestionModel;
-use pjMultiLangModel;
-use pjQuestionCategoryModel;
+// Database connection
+$mysqli = new mysqli($db_host, $db_user, $db_pass, 'webbycms_knowledge');
 
-// Optional: Protect with API key
-$apiKey = $_GET['api_key'] ?? '';
-if ($apiKey !== 'your_secret_key') {
-    http_response_code(401);
-    echo json_encode(['error' => 'Unauthorized']);
-    exit;
+// Check connection
+if ($mysqli->connect_error) {
+    die('Database connection failed: ' . $mysqli->connect_error);
 }
 
-// ✅ Dummy controller class inside the same file
-class PublicAPI extends pjAppController
-{
-    public function getQuestions()
-    {
-        $localeId = (isset($_GET['locale_id']) && is_numeric($_GET['locale_id'])) ? $_GET['locale_id'] : 1;
-        $questionModel = pjQuestionModel::factory()
-            ->join('pjMultiLang', "t2.model='pjQuestion' AND t2.foreign_id=t1.id AND t2.locale='$localeId' AND t2.field='question'", 'left outer')
-            ->join('pjMultiLang', "t3.model='pjQuestion' AND t3.foreign_id=t1.id AND t3.locale='$localeId' AND t3.field='answer'", 'left outer')
-            ->join('pjUser', "t4.id=t1.user_id", 'left outer');
+// SQL to retrieve questions, answers, and category names
+$sql = "
+    SELECT 
+        q.id AS question_id,
+        q.user_id,
+        q.featured,
+        q.views,
+        q.created,
+        q.modified,
+        q.status,
+        q_lang_question.content AS question,
+        q_lang_answer.content AS answer,
+        cat_lang_name.content AS category_name
+    FROM webby_knowledgebase_questions q
+    LEFT JOIN webby_knowledgebase_questions_categories qc ON q.id = qc.question_id
+    LEFT JOIN webby_knowledgebase_multi_lang cat_lang_name 
+        ON qc.category_id = cat_lang_name.foreign_id 
+        AND cat_lang_name.model = 'pjCategory' 
+        AND cat_lang_name.field = 'name'
+    LEFT JOIN webby_knowledgebase_multi_lang q_lang_question 
+        ON q.id = q_lang_question.foreign_id 
+        AND q_lang_question.model = 'pjQuestion' 
+        AND q_lang_question.field = 'question'
+    LEFT JOIN webby_knowledgebase_multi_lang q_lang_answer 
+        ON q.id = q_lang_answer.foreign_id 
+        AND q_lang_answer.model = 'pjQuestion' 
+        AND q_lang_answer.field = 'answer'
+    ORDER BY q.id DESC
+";
 
-        if (isset($_GET['q']) && !empty($_GET['q'])) {
-            $q = pjObject::escapeString($_GET['q']);
-            $questionModel->where('t2.content LIKE', "%$q%")->orWhere('t3.content LIKE', "%$q%");
-        }
-        if (isset($_GET['question']) && !empty($_GET['question'])) {
-            $q = pjObject::escapeString($_GET['question']);
-            $questionModel->where('t2.content LIKE', "%$q%");
-        }
-        if (isset($_GET['answer']) && !empty($_GET['answer'])) {
-            $q = pjObject::escapeString($_GET['answer']);
-            $questionModel->where('t3.content LIKE', "%$q%");
-        }
-        if (isset($_GET['user_id']) && !empty($_GET['user_id'])) {
-            $user_id = pjObject::escapeString($_GET['user_id']);
-            $questionModel->where('t1.user_id', $user_id);
-        }
-        if (isset($_GET['category_id']) && !empty($_GET['category_id'])) {
-            $category_id = pjObject::escapeString($_GET['category_id']);
-            $questionModel->where("(t1.id IN (SELECT question_id FROM `" . pjQuestionCategoryModel::factory()->getTable() . "` WHERE category_id = $category_id))");
-        }
-        if (isset($_GET['status']) && in_array($_GET['status'], ['T', 'F'])) {
-            $questionModel->where('t1.status', $_GET['status']);
-        }
+$result = $mysqli->query($sql);
 
-        $column = isset($_GET['column']) ? $_GET['column'] : 'created';
-        $direction = isset($_GET['direction']) && in_array(strtoupper($_GET['direction']), ['ASC', 'DESC']) ? strtoupper($_GET['direction']) : 'DESC';
-
-        $total = $questionModel->findCount()->getData();
-        $rowCount = isset($_GET['rowCount']) && (int) $_GET['rowCount'] > 0 ? (int) $_GET['rowCount'] : 10;
-        $page = isset($_GET['page']) && (int) $_GET['page'] > 0 ? (int) $_GET['page'] : 1;
-        $offset = ($page - 1) * $rowCount;
-        $pages = ceil($total / $rowCount);
-        if ($page > $pages) $page = $pages;
-
-        $data = $questionModel
-            ->select("t1.*, t2.content as question, t3.content as answer, t4.name as author")
-            ->orderBy("t1.created DESC")
-            ->limit(10)
-            ->findAll()
-            ->getData();
-
-        foreach ($data as &$item) {
-            $categories = pjQuestionCategoryModel::factory()
-                ->join('pjCategory', 'pjCategory.id=t1.category_id', 'inner')
-                ->where('t1.question_id', $item['id'])
-                ->select('pjCategory.id, pjCategory.name')
-                ->findAll()
-                ->getData();
-            $item['categories'] = $categories;
-        }
-
-        pjAppController::jsonResponse([
-            'data' => $data
-        ]);
-    }
+if (!$result) {
+    die('Error executing query: ' . $mysqli->error);
 }
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Knowledgebase Questions</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 2rem;
+        }
+        table {
+            font-size: 0.95rem;
+        }
+        th, td {
+            vertical-align: top;
+        }
+        .table-responsive {
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
 
-// ✅ Run the API
-$api = new PublicAPI();
-$api->getQuestions();
+<h2 class="mb-4">Knowledgebase Questions</h2>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover table-bordered align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Question</th>
+                <th>Answer</th>
+                <th>Category</th>
+                <th>Views</th>
+                <th>Created</th>
+                <th>Modified</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php while ($row = $result->fetch_assoc()): ?>
+            <tr>
+                <td><?php echo htmlspecialchars($row['question_id']); ?></td>
+                <td><?php echo nl2br(htmlspecialchars($row['question'])); ?></td>
+                <td><?php echo nl2br(htmlspecialchars($row['answer'])); ?></td>
+                <td><?php echo htmlspecialchars($row['category_name']); ?></td>
+                <td><?php echo htmlspecialchars($row['views']); ?></td>
+                <td><?php echo htmlspecialchars($row['created']); ?></td>
+                <td><?php echo htmlspecialchars($row['modified']); ?></td>
+                <td><?php echo htmlspecialchars($row['status']); ?></td>
+            </tr>
+            <?php endwhile; ?>
+        </tbody>
+    </table>
+</div>
+
+<!-- Bootstrap 5 JS Bundle CDN (with Popper) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
+
+<?php
+// Close connection
+$mysqli->close();
+?>
