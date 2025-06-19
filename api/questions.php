@@ -20,7 +20,11 @@ if ($mysqli->connect_error) {
     exit;
 }
 
-// SQL to retrieve questions, answers, and category names
+// Get search keyword from query string
+$keywords = isset($_GET['keywords']) ? trim($_GET['keywords']) : '';
+$escaped_keywords = $mysqli->real_escape_string($keywords);
+
+// Base SQL
 $sql = "
     SELECT 
         q.id AS question_id,
@@ -47,8 +51,20 @@ $sql = "
         ON q.id = q_lang_answer.foreign_id 
         AND q_lang_answer.model = 'pjQuestion' 
         AND q_lang_answer.field = 'answer'
-    ORDER BY q.id DESC
 ";
+
+// Add WHERE clause only if keywords exist
+if (!empty($escaped_keywords)) {
+    $sql .= "
+        WHERE (
+            q_lang_question.content LIKE '%$escaped_keywords%' OR
+            q_lang_answer.content LIKE '%$escaped_keywords%' OR
+            cat_lang_name.content LIKE '%$escaped_keywords%'
+        )
+    ";
+}
+
+$sql .= " ORDER BY q.id DESC";
 
 $result = $mysqli->query($sql);
 
@@ -73,5 +89,5 @@ while ($row = $result->fetch_assoc()) {
 // Close connection
 $mysqli->close();
 
-// Output JSON
+// Return results
 echo json_encode(['data' => $questions], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
