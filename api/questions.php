@@ -10,21 +10,35 @@ header('Content-Type: application/json');
 // Load database config
 require_once 'config/database.php';
 
-// Database connection
+// Connect to database
 $mysqli = new mysqli($db_host, $db_user, $db_pass, 'webbycms_knowledge');
 
-// Check connection
 if ($mysqli->connect_error) {
     http_response_code(500);
     echo json_encode(['error' => 'Database connection failed: ' . $mysqli->connect_error]);
     exit;
 }
 
-// Get search keyword from query string
+// Get 'tenant' from query param, fallback to 'webby_knowledgebase_'
+$tenant = isset($_GET['tenant']) ? trim($_GET['tenant']) : '';
+$tenant_prefix = 'webby_knowledgebase_'; // default
+
+if (!empty($tenant)) {
+    // Sanitize tenant name: allow only letters, numbers, underscore
+    if (preg_match('/^[a-zA-Z0-9_]+$/', $tenant)) {
+        $tenant_prefix = $mysqli->real_escape_string($tenant) . '_knowledgebase_';
+    } else {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid tenant identifier.']);
+        exit;
+    }
+}
+
+// Get optional search keyword
 $keywords = isset($_GET['keywords']) ? trim($_GET['keywords']) : '';
 $escaped_keywords = $mysqli->real_escape_string($keywords);
 
-// Base SQL
+// Compose SQL using dynamic prefix
 $sql = "
     SELECT 
         q.id AS question_id,
@@ -37,23 +51,23 @@ $sql = "
         q_lang_question.content AS question,
         q_lang_answer.content AS answer,
         cat_lang_name.content AS category_name
-    FROM webby_knowledgebase_questions q
-    LEFT JOIN webby_knowledgebase_questions_categories qc ON q.id = qc.question_id
-    LEFT JOIN webby_knowledgebase_multi_lang cat_lang_name 
+    FROM {$tenant_prefix}questions q
+    LEFT JOIN {$tenant_prefix}questions_categories qc ON q.id = qc.question_id
+    LEFT JOIN {$tenant_prefix}multi_lang cat_lang_name 
         ON qc.category_id = cat_lang_name.foreign_id 
         AND cat_lang_name.model = 'pjCategory' 
         AND cat_lang_name.field = 'name'
-    LEFT JOIN webby_knowledgebase_multi_lang q_lang_question 
+    LEFT JOIN {$tenant_prefix}multi_lang q_lang_question 
         ON q.id = q_lang_question.foreign_id 
         AND q_lang_question.model = 'pjQuestion' 
         AND q_lang_question.field = 'question'
-    LEFT JOIN webby_knowledgebase_multi_lang q_lang_answer 
+    LEFT JOIN {$tenant_prefix}multi_lang q_lang_answer 
         ON q.id = q_lang_answer.foreign_id 
         AND q_lang_answer.model = 'pjQuestion' 
         AND q_lang_answer.field = 'answer'
 ";
 
-// Add WHERE clause only if keywords exist
+// Add WHERE clause for keywords
 if (!empty($escaped_keywords)) {
     $sql .= "
         WHERE (
@@ -66,6 +80,7 @@ if (!empty($escaped_keywords)) {
 
 $sql .= " ORDER BY q.id DESC";
 
+// Execute query
 $result = $mysqli->query($sql);
 
 if (!$result) {
@@ -74,6 +89,7 @@ if (!$result) {
     exit;
 }
 
+// Build response
 $questions = [];
 while ($row = $result->fetch_assoc()) {
     $questions[] = [
@@ -86,8 +102,8 @@ while ($row = $result->fetch_assoc()) {
     ];
 }
 
-// Close connection
+// Close DB
 $mysqli->close();
 
-// Return results
+// Return JSON
 echo json_encode(['data' => $questions], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
