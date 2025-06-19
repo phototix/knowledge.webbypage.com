@@ -1,7 +1,11 @@
 <?php
+// Enable error reporting for debugging
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
+
+// Set content type to JSON
+header('Content-Type: application/json');
 
 // Load database config
 require_once 'config/database.php';
@@ -11,7 +15,9 @@ $mysqli = new mysqli($db_host, $db_user, $db_pass, 'webbycms_knowledge');
 
 // Check connection
 if ($mysqli->connect_error) {
-    die('Database connection failed: ' . $mysqli->connect_error);
+    http_response_code(500);
+    echo json_encode(['error' => 'Database connection failed: ' . $mysqli->connect_error]);
+    exit;
 }
 
 // SQL to retrieve questions, answers, and category names
@@ -47,69 +53,25 @@ $sql = "
 $result = $mysqli->query($sql);
 
 if (!$result) {
-    die('Error executing query: ' . $mysqli->error);
+    http_response_code(500);
+    echo json_encode(['error' => 'Error executing query: ' . $mysqli->error]);
+    exit;
 }
-?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Knowledgebase Questions</title>
-    <!-- Bootstrap 5 CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            padding: 2rem;
-        }
-        table {
-            font-size: 0.95rem;
-        }
-        th, td {
-            vertical-align: top;
-        }
-        .table-responsive {
-            margin-top: 1rem;
-        }
-    </style>
-</head>
-<body>
 
-<h2 class="mb-4">Knowledgebase Questions</h2>
+$questions = [];
+while ($row = $result->fetch_assoc()) {
+    $questions[] = [
+        'id' => (int) $row['question_id'],
+        'question' => $row['question'],
+        'answer' => $row['answer'],
+        'category' => $row['category_name'],
+        'views' => (int) $row['views'],
+        'created' => $row['created'],
+    ];
+}
 
-<div class="table-responsive">
-    <table class="table table-striped table-hover table-bordered align-middle">
-        <thead class="table-dark">
-            <tr>
-                <th>ID</th>
-                <th>Question</th>
-                <th>Answer</th>
-                <th>Category</th>
-                <th>Views</th>
-                <th>Created</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php while ($row = $result->fetch_assoc()): ?>
-            <tr>
-                <td><?php echo htmlspecialchars($row['question_id']); ?></td>
-                <td><?php echo nl2br(htmlspecialchars($row['question'])); ?></td>
-                <td><?php echo nl2br(htmlspecialchars($row['answer'])); ?></td>
-                <td><?php echo htmlspecialchars($row['category_name']); ?></td>
-                <td><?php echo htmlspecialchars($row['views']); ?></td>
-                <td><?php echo htmlspecialchars($row['created']); ?></td>
-            </tr>
-            <?php endwhile; ?>
-        </tbody>
-    </table>
-</div>
-
-<!-- Bootstrap 5 JS Bundle CDN (with Popper) -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.4.0/dist/js/bootstrap.bundle.min.js"></script>
-
-</body>
-</html>
-
-<?php
 // Close connection
 $mysqli->close();
-?>
+
+// Output JSON
+echo json_encode(['data' => $questions], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
