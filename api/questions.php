@@ -86,8 +86,6 @@ if (!$result) {
                 <th>Category</th>
                 <th>Views</th>
                 <th>Created</th>
-                <th>Modified</th>
-                <th>Status</th>
             </tr>
         </thead>
         <tbody>
@@ -99,8 +97,6 @@ if (!$result) {
                 <td><?php echo htmlspecialchars($row['category_name']); ?></td>
                 <td><?php echo htmlspecialchars($row['views']); ?></td>
                 <td><?php echo htmlspecialchars($row['created']); ?></td>
-                <td><?php echo htmlspecialchars($row['modified']); ?></td>
-                <td><?php echo htmlspecialchars($row['status']); ?></td>
             </tr>
             <?php endwhile; ?>
         </tbody>
