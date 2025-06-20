@@ -3,6 +3,21 @@ if (!headers_sent())
 {
 	session_name('KnowledgebaseBuilder');
 	@session_start();
+
+	$tenants = ['webby', 'kms', 'icdi', 'general'];
+
+	// Handle dropdown form submission
+	if (isset($_POST['tenant']) && in_array($_POST['tenant'], $tenants)) {
+		$_SESSION['tenant_prefix'] = $_POST['tenant'] . '_';
+		header("Location: ".$_SERVER['PHP_SELF']);
+		exit;
+	}
+
+	// Set default if not selected
+	if (!isset($_SESSION['tenant_prefix'])) {
+		$_SESSION['tenant_prefix'] = 'webby_';
+	}
+
 }
 if (isset($_GET["reporting"]) && $_GET["reporting"] == '0') 
 {
@@ -37,3 +52,11 @@ if (isset($_GET['controller']))
 	$pjObserver->init();
 }
 ?>
+<form method="post" style="position:fixed;top:10px;right:10px;z-index:9999;">
+    <label for="tenant">Tenant:</label>
+    <select name="tenant" id="tenant" onchange="this.form.submit()">
+        <?php foreach ($tenants as $tenant): ?>
+            <option value="<?= $tenant ?>" <?= $_SESSION['tenant_prefix'] === $tenant . '_' ? 'selected' : '' ?>><?= ucfirst($tenant) ?></option>
+        <?php endforeach; ?>
+    </select>
+</form>
